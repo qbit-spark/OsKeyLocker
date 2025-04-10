@@ -218,48 +218,129 @@ public class OsSecureStore {
      * @return Detected application name or default if detection fails
      */
 
+//    private static String detectApplicationName() {
+//        // Analyze the call stack to find the calling application
+//        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+//
+//        // Find the first class that's not part of our library or Java itself
+//        for (StackTraceElement element : stackTrace) {
+//            String className = element.getClassName();
+//
+//            // Skip system and library classes
+//            if (!className.startsWith("java.") &&
+//                    !className.startsWith("javax.") &&
+//                    !className.startsWith("sun.") &&
+//                    !className.startsWith("com.OsSecureStore.")) {
+//
+//                try {
+//                    // Load the class
+//                    Class<?> callerClass = Class.forName(className);
+//
+//                    // Get the package name
+//                    Package pkg = callerClass.getPackage();
+//                    if (pkg != null) {
+//                        // Use the first segment of the package name as the app name
+//                        String packageName = pkg.getName();
+//                        int firstDot = packageName.indexOf('.');
+//
+//                        if (firstDot > 0) {
+//                            return packageName.substring(0, firstDot);
+//                        } else {
+//                            return packageName; // Use the whole package name if no dots
+//                        }
+//                    }
+//
+//                    // Fall back to class name if no package
+//                    return callerClass.getSimpleName();
+//
+//                } catch (ClassNotFoundException e) {
+//                    // Continue to the next element if this class can't be loaded
+//                }
+//            }
+//        }
+//
+//        // If we get here, we couldn't find a suitable caller
+//        return DEFAULT_APP_NAME;
+//    }
+
+    /**
+     * Attempts to detect the application name from the calling application
+     * @return Detected application name or default if detection fails
+     */
     private static String detectApplicationName() {
-        // Analyze the call stack to find the calling application
-        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-
-        // Find the first class that's not part of our library or Java itself
-        for (StackTraceElement element : stackTrace) {
-            String className = element.getClassName();
-
-            // Skip system and library classes
-            if (!className.startsWith("java.") &&
-                    !className.startsWith("javax.") &&
-                    !className.startsWith("sun.") &&
-                    !className.startsWith("com.OsSecureStore.")) {
-
-                try {
-                    // Load the class
-                    Class<?> callerClass = Class.forName(className);
-
-                    // Get the package name
-                    Package pkg = callerClass.getPackage();
-                    if (pkg != null) {
-                        // Use the first segment of the package name as the app name
-                        String packageName = pkg.getName();
-                        int firstDot = packageName.indexOf('.');
-
+        try {
+            // First try to detect from main class
+            String mainClass = System.getProperty("sun.java.command");
+            if (mainClass != null && !mainClass.isEmpty()) {
+                // Split by space to get the first part (main class name)
+                String className = mainClass.split(" ")[0];
+                if (className.contains(".")) {
+                    // Extract package name
+                    String packageName = className.substring(0, className.lastIndexOf("."));
+                    if (!packageName.isEmpty()) {
+                        // Get the first part of the package name
+                        int firstDot = packageName.indexOf(".");
                         if (firstDot > 0) {
                             return packageName.substring(0, firstDot);
                         } else {
-                            return packageName; // Use the whole package name if no dots
+                            return packageName;
                         }
                     }
-
-                    // Fall back to class name if no package
-                    return callerClass.getSimpleName();
-
-                } catch (ClassNotFoundException e) {
-                    // Continue to the next element if this class can't be loaded
+                } else {
+                    // No package, use class name
+                    return className;
                 }
             }
+
+            // If that fails, try stack trace analysis
+            StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+
+            // Find the first class that's not part of our library or Java itself
+            for (StackTraceElement element : stackTrace) {
+                String className = element.getClassName();
+
+                // Skip system and library classes
+                if (!className.startsWith("java.") &&
+                        !className.startsWith("javax.") &&
+                        !className.startsWith("sun.") &&
+                        !className.startsWith("com.OsSecureStore.") &&
+                        !className.startsWith("jdk.")) {
+
+                    try {
+                        // Extract package name
+                        int lastDot = className.lastIndexOf(".");
+                        if (lastDot > 0) {
+                            String packageName = className.substring(0, lastDot);
+
+                            // Get top-level package
+                            int firstDot = packageName.indexOf(".");
+                            if (firstDot > 0) {
+                                return packageName.substring(0, firstDot);
+                            } else {
+                                return packageName;
+                            }
+                        } else {
+                            // No package, use class name
+                            return className;
+                        }
+                    } catch (Exception e) {
+                        // Continue to next element if there's an issue
+                    }
+                }
+            }
+
+            // If everything fails, try to get the current working directory name
+            Path currentPath = Paths.get("").toAbsolutePath();
+            String dirName = currentPath.getFileName().toString();
+            if (dirName != null && !dirName.isEmpty()) {
+                return dirName;
+            }
+        } catch (Exception e) {
+            // Ignore exceptions in detection
         }
 
-        // If we get here, we couldn't find a suitable caller
+
+        // Last resort fallback
         return DEFAULT_APP_NAME;
     }
 }
