@@ -5,6 +5,8 @@ import com.OsSecureStore.platform.PlatformSecureStorage;
 
 import java.io.*;
 import java.nio.file.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Properties;
 
@@ -154,6 +156,7 @@ public class OsSecureStore {
         // Auto-detect application name if not specified
         if (appName == null) {
             appName = detectApplicationName();
+            System.out.println("Detected application name: " + appName);
         }
 
 
@@ -218,129 +221,91 @@ public class OsSecureStore {
      * @return Detected application name or default if detection fails
      */
 
-//    private static String detectApplicationName() {
-//        // Analyze the call stack to find the calling application
-//        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-//
-//        // Find the first class that's not part of our library or Java itself
-//        for (StackTraceElement element : stackTrace) {
-//            String className = element.getClassName();
-//
-//            // Skip system and library classes
-//            if (!className.startsWith("java.") &&
-//                    !className.startsWith("javax.") &&
-//                    !className.startsWith("sun.") &&
-//                    !className.startsWith("com.OsSecureStore.")) {
-//
-//                try {
-//                    // Load the class
-//                    Class<?> callerClass = Class.forName(className);
-//
-//                    // Get the package name
-//                    Package pkg = callerClass.getPackage();
-//                    if (pkg != null) {
-//                        // Use the first segment of the package name as the app name
-//                        String packageName = pkg.getName();
-//                        int firstDot = packageName.indexOf('.');
-//
-//                        if (firstDot > 0) {
-//                            return packageName.substring(0, firstDot);
-//                        } else {
-//                            return packageName; // Use the whole package name if no dots
-//                        }
-//                    }
-//
-//                    // Fall back to class name if no package
-//                    return callerClass.getSimpleName();
-//
-//                } catch (ClassNotFoundException e) {
-//                    // Continue to the next element if this class can't be loaded
-//                }
-//            }
-//        }
-//
-//        // If we get here, we couldn't find a suitable caller
-//        return DEFAULT_APP_NAME;
-//    }
-
-    /**
-     * Attempts to detect the application name from the calling application
-     * @return Detected application name or default if detection fails
-     */
     private static String detectApplicationName() {
         try {
-            // First try to detect from main class
+            // First try to get the JAR file path - most reliable for deployed applications
+            try {
+                String jarPath = OsSecureStore.class
+                        .getProtectionDomain()
+                        .getCodeSource()
+                        .getLocation()
+                        .toURI()
+                        .getPath();
+
+                // Extract JAR filename
+                String jarName = jarPath.substring(jarPath.lastIndexOf("/") + 1);
+
+                // Remove .jar extension if present
+                if (jarName.toLowerCase().endsWith(".jar")) {
+                    jarName = jarName.substring(0, jarName.length() - 4);
+                }
+
+                // Use the JAR name as app name if it's not our own library
+                if (!jarName.toLowerCase().contains("ossecurestore")) {
+                    return jarName;
+                }
+            } catch (Exception e) {
+                // Fall through to other methods if JAR detection fails
+            }
+
+            // Try to get the main class name
             String mainClass = System.getProperty("sun.java.command");
             if (mainClass != null && !mainClass.isEmpty()) {
-                // Split by space to get the first part (main class name)
-                String className = mainClass.split(" ")[0];
-                if (className.contains(".")) {
-                    // Extract package name
-                    String packageName = className.substring(0, className.lastIndexOf("."));
-                    if (!packageName.isEmpty()) {
-                        // Get the first part of the package name
-                        int firstDot = packageName.indexOf(".");
-                        if (firstDot > 0) {
-                            return packageName.substring(0, firstDot);
-                        } else {
-                            return packageName;
-                        }
-                    }
-                } else {
-                    // No package, use class name
-                    return className;
+                if (mainClass.contains(" ")) {
+                    mainClass = mainClass.split(" ")[0]; // Remove arguments
+                }
+
+                // Use the full main class name as a unique identifier
+                if (!mainClass.startsWith("com.OsSecureStore")) {
+                    return "app-" + mainClass.replace('.', '-');
                 }
             }
 
-            // If that fails, try stack trace analysis
-            StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-
-            // Find the first class that's not part of our library or Java itself
-            for (StackTraceElement element : stackTrace) {
-                String className = element.getClassName();
-
-                // Skip system and library classes
-                if (!className.startsWith("java.") &&
-                        !className.startsWith("javax.") &&
-                        !className.startsWith("sun.") &&
-                        !className.startsWith("com.OsSecureStore.") &&
-                        !className.startsWith("jdk.")) {
-
-                    try {
-                        // Extract package name
-                        int lastDot = className.lastIndexOf(".");
-                        if (lastDot > 0) {
-                            String packageName = className.substring(0, lastDot);
-
-                            // Get top-level package
-                            int firstDot = packageName.indexOf(".");
-                            if (firstDot > 0) {
-                                return packageName.substring(0, firstDot);
-                            } else {
-                                return packageName;
-                            }
-                        } else {
-                            // No package, use class name
-                            return className;
-                        }
-                    } catch (Exception e) {
-                        // Continue to next element if there's an issue
-                    }
+            // If main class detection fails, create a hash-based ID from the classpath
+            String classpath = System.getProperty("java.class.path");
+            if (classpath != null && !classpath.isEmpty()) {
+                try {
+                    MessageDigest md = MessageDigest.getInstance("SHA-256");
+                    byte[] hash = md.digest(classpath.getBytes());
+                    // Use the first 8 chars of the hash
+                    String hashId = bytesToHex(hash).substring(0, 8);
+                    return "app-" + hashId;
+                } catch (NoSuchAlgorithmException e) {
+                    // Fall through to next method if hashing fails
                 }
             }
 
-            // If everything fails, try to get the current working directory name
-            Path currentPath = Paths.get("").toAbsolutePath();
-            String dirName = currentPath.getFileName().toString();
-            if (dirName != null && !dirName.isEmpty()) {
-                return dirName;
+            // Try using a combination of user.dir and user.name for uniqueness
+            String userDir = System.getProperty("user.dir");
+            String userName = System.getProperty("user.name");
+            if (userDir != null && userName != null) {
+                String combined = userDir + userName;
+                try {
+                    MessageDigest md = MessageDigest.getInstance("SHA-256");
+                    byte[] hash = md.digest(combined.getBytes());
+                    // Use the first 8 chars of the hash
+                    String hashId = bytesToHex(hash).substring(0, 8);
+                    return "app-" + hashId;
+                } catch (NoSuchAlgorithmException e) {
+                    // Fall back to using the directory name if hashing fails
+                    Path path = Paths.get(userDir);
+                    return "app-" + path.getFileName().toString();
+                }
             }
         } catch (Exception e) {
-            // Ignore exceptions in detection
+            // Ignore errors in detection
         }
 
+        // Ultimate fallback with timestamp to ensure uniqueness
+        return "ossecurestore-" + System.currentTimeMillis();
+    }
 
-        // Last resort fallback
-        return DEFAULT_APP_NAME;
+    // Helper method to convert byte array to hex string
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
     }
 }
