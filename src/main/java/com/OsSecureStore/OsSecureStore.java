@@ -4,9 +4,15 @@ import com.OsSecureStore.exceptions.SecureStorageException;
 import com.OsSecureStore.platform.PlatformSecureStorage;
 
 import java.io.*;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Properties;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 /**
  * Main API for OsSecureStore
@@ -154,6 +160,7 @@ public class OsSecureStore {
         // Auto-detect application name if not specified
         if (appName == null) {
             appName = detectApplicationName();
+            System.out.println("Detected application name: " + appName);
         }
 
 
@@ -213,53 +220,94 @@ public class OsSecureStore {
         }
     }
 
+
     /**
-     * Attempts to detect the application name from the calling application
-     * @return Detected application name or default if detection fails
+     * Detects the user's application name by analyzing the stack trace or JARs in the classpath.
+     * @return The detected application name (e.g., "ProjectX"), or a fallback ID if detection fails.
      */
-
     private static String detectApplicationName() {
-        // Analyze the call stack to find the calling application
-        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-
-        // Find the first class that's not part of our library or Java itself
-        for (StackTraceElement element : stackTrace) {
-            String className = element.getClassName();
-
-            // Skip system and library classes
-            if (!className.startsWith("java.") &&
-                    !className.startsWith("javax.") &&
-                    !className.startsWith("sun.") &&
-                    !className.startsWith("com.OsSecureStore.")) {
-
-                try {
-                    // Load the class
-                    Class<?> callerClass = Class.forName(className);
-
-                    // Get the package name
-                    Package pkg = callerClass.getPackage();
-                    if (pkg != null) {
-                        // Use the first segment of the package name as the app name
-                        String packageName = pkg.getName();
-                        int firstDot = packageName.indexOf('.');
-
-                        if (firstDot > 0) {
-                            return packageName.substring(0, firstDot);
-                        } else {
-                            return packageName; // Use the whole package name if no dots
-                        }
-                    }
-
-                    // Fall back to class name if no package
-                    return callerClass.getSimpleName();
-
-                } catch (ClassNotFoundException e) {
-                    // Continue to the next element if this class can't be loaded
-                }
-            }
+        // 1. First, try to find the user's main JAR (excluding our library)
+        String appName = detectFromJarManifest();
+        if (appName != null) {
+            return appName;
         }
 
-        // If we get here, we couldn't find a suitable caller
-        return DEFAULT_APP_NAME;
+        // 2. Fallback to stack trace analysis (find the first non-library class)
+        appName = detectFromStackTrace();
+        if (appName != null) {
+            return appName;
+        }
+
+        // 3. Ultimate fallback: Use a hash of the user's classpath
+        return generateClasspathHash();
     }
-}
+
+// --- Helper Methods ---
+
+    /**
+     * Checks JAR manifests in the classpath for "Implementation-Title" (user-friendly name).
+     */
+    private static String detectFromJarManifest() {
+        try {
+            ClassLoader cl = ClassLoader.getSystemClassLoader();
+            URL[] urls = ((URLClassLoader) cl).getURLs();
+
+            for (URL url : urls) {
+                String path = url.getPath();
+                if (path.endsWith(".jar") && !path.contains("ossecurestore")) {
+                    try (JarFile jar = new JarFile(path)) {
+                        Manifest manifest = jar.getManifest();
+                        if (manifest != null) {
+                            String title = manifest.getMainAttributes().getValue("Implementation-Title");
+                            if (title != null && !title.isEmpty()) {
+                                return title; // e.g., "ProjectX"
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    /**
+     * Analyzes the stack trace to find the first non-library class.
+     */
+    private static String detectFromStackTrace() {
+        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+        for (StackTraceElement element : stack) {
+            String className = element.getClassName();
+            if (!className.startsWith("com.OsSecureStore") &&
+                    !className.startsWith("java.") &&
+                    !className.startsWith("sun.")) {
+                // Extract the top-level package name (e.g., "com.projectx.Main" → "projectx")
+                String[] parts = className.split("\\.");
+                return parts.length > 1 ? parts[1] : "app";
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Generates a short hash from the classpath to ensure uniqueness.
+     */
+    private static String generateClasspathHash() {
+        try {
+            String classpath = System.getProperty("java.class.path");
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(classpath.getBytes());
+            return "app-" + bytesToHex(hash).substring(0, 8); // e.g., "app-a3c8f2b1"
+        } catch (Exception e) {
+            return "app-" + System.currentTimeMillis();
+        }
+    }
+
+
+    // Helper method to convert byte array to hex string
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+}}

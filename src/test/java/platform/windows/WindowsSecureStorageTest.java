@@ -29,7 +29,7 @@ public class WindowsSecureStorageTest {
             testEdgeCases();
 
             // Clean up after all tests
-            OsSecureStore.clear();
+           // OsSecureStore.clear();
             System.out.println("\n===== All tests completed successfully =====");
 
         } catch (SecureStorageException e) {
