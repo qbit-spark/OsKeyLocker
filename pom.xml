@@ -4,13 +4,22 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.github.qbit-spark</groupId>
-    <artifactId>OsSecureStore</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <groupId>com.ossecurestore</groupId>
+    <artifactId>ossecurestore</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
 
     <name>OsSecureStore</name>
     <description>Cross-platform secure storage library using OS-native security features</description>
     <url>https://github.com/qbit-spark/OsSecureStore</url>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <junit.version>5.9.2</junit.version>
+        <github.repository>qbit-spark/OsSecureStore</github.repository>
+    </properties>
 
     <licenses>
         <license>
@@ -18,19 +27,6 @@
             <url>http://www.opensource.org/licenses/mit-license.php</url>
         </license>
     </licenses>
-
-    <scm>
-        <connection>scm:git:git://github.com/qbit-spark/OsSecureStore.git</connection>
-        <developerConnection>scm:git:ssh://github.com:qbit-spark/OsSecureStore.git</developerConnection>
-        <url>https://github.com/qbit-spark/OsSecureStore/tree/main</url>
-    </scm>
-
-    <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <junit.version>5.9.2</junit.version>
-    </properties>
 
     <dependencies>
         <!-- JUnit for testing -->
@@ -48,9 +44,18 @@
         </dependency>
     </dependencies>
 
+    <!-- GitHub Packages Distribution -->
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/${github.repository}</url>
+        </repository>
+    </distributionManagement>
+
     <build>
         <plugins>
-            <!-- Compile Java sources -->
+            <!-- Compiler Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -61,14 +66,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Run tests -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.1.2</version>
-            </plugin>
-
-            <!-- Build source JAR -->
+            <!-- Source Code Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -83,7 +81,7 @@
                 </executions>
             </plugin>
 
-            <!-- Build javadoc JAR -->
+            <!-- Javadoc Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
@@ -99,12 +97,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <distributionManagement>
-        <repository>
-            <id>github</id>
-            <name>GitHub qbit-spark Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/qbit-spark/OsSecureStore</url>
-        </repository>
-    </distributionManagement>
 </project>
