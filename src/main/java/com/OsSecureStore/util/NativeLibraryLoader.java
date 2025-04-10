@@ -2,13 +2,17 @@ package com.OsSecureStore.util;
 
 import java.io.*;
 import java.nio.file.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 
 /**
- * Utility class for loading native libraries
+ * Utility class for loading native libraries from inside the JAR
  */
 public class NativeLibraryLoader {
 
     private static final String TEMP_DIR_PREFIX = "ossecurestore";
+    private static final String LIBRARY_DIR = "native";
 
     /**
      * Loads a native library from the resources
@@ -20,22 +24,42 @@ public class NativeLibraryLoader {
         String arch = System.getProperty("os.arch").toLowerCase();
         String extension = getLibraryExtension(os);
 
+        // Form the resource path
+        String resourcePath = "/" + LIBRARY_DIR + "/" + os + "-" + getArchName(arch) + "/" + libraryName + extension;
 
-        String resourcePath = String.format("/native/%s-%s/%s%s",
-                os, getArchName(arch), libraryName, extension);
-
-
+        // Extract and load the library
         try {
-            // Extract the library to a temp file
-            Path tempLibrary = extractLibrary(resourcePath);
+            // Get the library as a resource stream
+            InputStream libraryStream = NativeLibraryLoader.class.getResourceAsStream(resourcePath);
+            if (libraryStream == null) {
+                throw new IOException("Native library not found in JAR: " + resourcePath);
+            }
+
+            // Read the library bytes
+            byte[] libraryBytes = libraryStream.readAllBytes();
+            libraryStream.close();
+
+            // Create a unique filename based on the library content hash
+            String uniqueLibName = createUniqueLibraryName(libraryName, libraryBytes, extension);
+
+            // Get the temporary directory
+            Path tempDir = getTempDirectory();
+            Path libraryPath = tempDir.resolve(uniqueLibName);
+
+            // Extract library only if it doesn't exist yet
+            if (!Files.exists(libraryPath)) {
+                Files.write(libraryPath, libraryBytes);
+                // Ensure the file will be deleted when the JVM exits
+                libraryPath.toFile().deleteOnExit();
+            }
 
             // Load the library
-            System.load(tempLibrary.toString());
-        } catch (IOException e) {
+            System.load(libraryPath.toString());
+
+        } catch (Exception e) {
             throw new IOException("Failed to load native library: " + libraryName, e);
         }
     }
-
 
     private static String getLibraryExtension(String os) {
         if (PlatformDetector.WINDOWS.equals(os)) {
@@ -55,25 +79,30 @@ public class NativeLibraryLoader {
         }
     }
 
-    private static Path extractLibrary(String resourcePath) throws IOException {
-        // Create temp directory if it doesn't exist
-        Path tempDir = Files.createTempDirectory(TEMP_DIR_PREFIX);
-        tempDir.toFile().deleteOnExit();
+    private static Path getTempDirectory() throws IOException {
+        // Create a persistent temp directory for the library
+        String tempDirPath = System.getProperty("java.io.tmpdir");
+        Path tempDir = Paths.get(tempDirPath, TEMP_DIR_PREFIX);
 
-        // Get the filename from the resource path
-        String fileName = Paths.get(resourcePath).getFileName().toString();
-        Path tempLibrary = tempDir.resolve(fileName);
-
-        // Copy the library from resources to the temp file
-        try (InputStream in = NativeLibraryLoader.class.getResourceAsStream(resourcePath)) {
-            if (in == null) {
-                throw new IOException("Native library not found: " + resourcePath);
-            }
-
-            Files.copy(in, tempLibrary, StandardCopyOption.REPLACE_EXISTING);
+        if (!Files.exists(tempDir)) {
+            Files.createDirectories(tempDir);
         }
 
-        tempLibrary.toFile().deleteOnExit();
-        return tempLibrary;
+        return tempDir;
+    }
+
+    private static String createUniqueLibraryName(String libraryName, byte[] libraryBytes, String extension) {
+        // Create a hash of the library content to ensure uniqueness
+        String hash = "";
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(libraryBytes);
+            hash = "-" + HexFormat.of().formatHex(digest).substring(0, 8);
+        } catch (NoSuchAlgorithmException e) {
+            // If hashing fails, use a timestamp instead
+            hash = "-" + System.currentTimeMillis();
+        }
+
+        return libraryName + hash + extension;
     }
 }

@@ -12,7 +12,6 @@
     <name>OsSecureStore</name>
     <description>Cross-platform secure storage library using OS-native security features</description>
     <url>https://github.com/qbit-spark/OsSecureStore</url>
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>21</maven.compiler.source>
@@ -54,6 +53,17 @@
     </distributionManagement>
 
     <build>
+
+        <!-- Include all resources in the JAR -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+            </resource>
+        </resources>
+
         <plugins>
             <!-- Compiler Plugin -->
             <plugin>

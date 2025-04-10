@@ -59,6 +59,7 @@ public class WindowsSecureStorage implements PlatformSecureStorage {
         }
 
         try {
+            // Load the native library - use the base name without "lib" prefix or extension
             NativeLibraryLoader.loadLibrary("libWindowsDPAPI");
             initialized = true;
         } catch (IOException e) {

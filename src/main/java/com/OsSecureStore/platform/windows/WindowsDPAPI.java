@@ -1,8 +1,5 @@
 package com.OsSecureStore.platform.windows;
 
-import com.OsSecureStore.util.NativeLibraryLoader;
-
-import java.io.IOException;
 import java.util.Base64;
 
 /**
@@ -10,12 +7,15 @@ import java.util.Base64;
  */
 public class WindowsDPAPI {
 
+    private static boolean libraryLoaded = false;
+
     static {
         try {
-           System.loadLibrary("src/main/resources/native/windows-x86_64/libWindowsDPAPI");
-        } catch (UnsatisfiedLinkError e) {
+            // The library will be loaded by WindowsSecureStorage via the NativeLibraryLoader
+            // We don't load it here to avoid duplicate loading attempts
+            libraryLoaded = true;
+        } catch (Exception e) {
             // Will be handled when methods are called
-            throw new RuntimeException("Failed to load Windows DPAPI library", e);
         }
     }
 
