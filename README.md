@@ -1,20 +1,34 @@
-# 🗝️OsSecureStore
+Absolutely! Below is the updated **README** that includes installation instructions for both **Maven** (which you already have) and **Gradle** users. I've placed it under the **Installation** section to make it clear for both types of users:
 
-OsSecureStore is a cross-platform secure storage library for Java applications that leverages native OS security features to safely store sensitive data like API keys, tokens, passwords, and credentials.
+---
 
-## Features
+# 🗝️ OsSecureStore
 
-- **OS-native security**: Uses platform-specific security APIs (currently Windows DPAPI, with macOS and Linux support coming soon)
-- **Simple API**: Easy-to-use interface for storing and retrieving encrypted data
-- **Automatic application name detection**: Intelligently identifies your application and creates appropriate storage locations
-- **Flexible storage organization**: Store individual values or related groups of data with namespaces
-- **JNI integration**: Seamlessly connects to Windows Data Protection API (DPAPI) for strong encryption
+[![](https://jitpack.io/v/qbit-spark/OsSecureStore.svg)](https://jitpack.io/#qbit-spark/OsSecureStore)
 
-## Installation
+**OsSecureStore** is a cross-platform secure storage library for Java applications that leverages native OS-level security to safely store sensitive data like API keys, passwords, tokens, and credentials — without managing encryption keys yourself.
+
+---
+
+## ✨ Features
+
+- 🔒 **OS-native security** – Currently supports Windows DPAPI (macOS & Linux support coming soon)
+- 🧩 **Simple API** – Easy-to-use Java interface for storing and retrieving secure values
+- 🧠 **Smart app detection** – Automatically detects application name for storage context
+- 📂 **Flexible storage** – Organize data using key-value pairs or grouped namespaces
+- 🔗 **JNI integration** – Securely connects to Windows DPAPI for robust native encryption
+
+---
+
+## 📦 Installation
 
 ### Using JitPack
 
-Add the JitPack repository to your build file:
+To use **OsSecureStore** in your project, you can choose between **Maven** or **Gradle** as your build system.
+
+#### **For Maven users**:
+
+1. Add JitPack repository to your `pom.xml`:
 
 ```xml
 <repositories>
@@ -25,7 +39,7 @@ Add the JitPack repository to your build file:
 </repositories>
 ```
 
-Then add the dependency:
+2. Then add the dependency:
 
 ```xml
 <dependencies>
@@ -37,43 +51,63 @@ Then add the dependency:
 </dependencies>
 ```
 
-## Quick Start
+#### **For Gradle users**:
+
+1. Add JitPack repository to your `build.gradle`:
+
+```groovy
+repositories {
+    maven { url "https://jitpack.io" }
+}
+```
+
+2. Then add the dependency:
+
+```groovy
+dependencies {
+    implementation 'com.github.qbit-spark:OsSecureStore:v1.0.2'
+}
+```
+
+---
+
+## 🚀 Quick Start
 
 ### Basic Usage
 
 ```java
-// Store a sensitive API key
+// Store a sensitive value
 OsSecureStore.store("github.api_key", "ghp_1234567890abcdefghijklmnopqrstuvwxyz");
 
-// Later, retrieve the key
+// Retrieve the value
 String apiKey = OsSecureStore.retrieve("github.api_key");
 
-// Check if a key exists
-boolean hasKey = OsSecureStore.exists("github.api_key");
+// Check if the key exists
+boolean exists = OsSecureStore.exists("github.api_key");
 
-// Remove a key when no longer needed
+// Remove a specific key
 OsSecureStore.remove("github.api_key");
 
 // Clear all stored data
 OsSecureStore.clear();
 ```
 
-### Using SecureDataManager
+### Using `SecureDataManager`
 
-For more organized credential management, use the `SecureDataManager` class:
+Organize related credentials using namespaces:
 
 ```java
-// Create a manager with a custom namespace
+// Create a manager with a namespace
 SecureDataManager authManager = new SecureDataManager("authentication");
 
 // Store individual credentials
 authManager.storeValue("username", "user@example.com");
 authManager.storeValue("password", "MyS3cur3P@ssw0rd!");
 
-// Store grouped credentials (e.g., OAuth tokens)
+// Store grouped OAuth tokens
 Map<String, String> oauthTokens = SecureDataManager.createAuthCredentials(
-    "access-token-value-here",  // Access token
-    "refresh-token-value-here"  // Refresh token
+    "access-token-value", 
+    "refresh-token-value"
 );
 authManager.storeValueGroup("google", oauthTokens);
 
@@ -82,48 +116,62 @@ String username = authManager.loadValue("username");
 String googleAccessToken = authManager.loadValue("google.access");
 ```
 
+Set a custom application name (optional):
+
 ```java
 OsSecureStore.setApplicationName("MyApplication");
 ```
 
-## How It Works
+---
 
-OsSecureStore uses different mechanisms depending on the operating system:
+## ⚙️ How It Works
 
-- **Windows**: Windows Data Protection API (DPAPI), which ties the encryption to the current Windows user account
-- **macOS**: (Coming soon)
-- **Linux**: (Coming soon)
+OsSecureStore encrypts data using **platform-native security features**, then stores it in a local encrypted file. Your app never handles encryption keys directly.
 
-All values are encrypted before being stored in a properties file. The encryption is handled by the OS's native security APIs, ensuring that:
+| Platform | Backend Used | Notes |
+|----------|--------------|-------|
+| Windows  | [DPAPI](https://en.wikipedia.org/wiki/Data_Protection_API) | Fully supported |
+| macOS    | [Keychain Services](https://developer.apple.com/documentation/security/keychain_services) | Coming soon |
+| Linux    | [libsecret](https://wiki.gnome.org/Projects/Libsecret), Secret Service API | Coming soon |
 
-1. No encryption keys need to be managed by your application
-2. The encrypted data can only be decrypted by the same user on the same machine
-3. The security is handled at the OS level rather than relying on custom encryption algorithms
+### ✅ Benefits
 
-## Platform Support
+- Encryption keys never leave the OS
+- Data is tied to the current user profile
+- No need to manage custom encryption logic
 
-- **Windows**: Fully supported via [Windows Data Protection API (DPAPI)](https://en.wikipedia.org/wiki/Data_Protection_API). DPAPI provides user account-based encryption that securely ties data to the current Windows user credentials.
+---
 
-- **macOS**: Coming soon - Will use macOS [Keychain Services](https://developer.apple.com/documentation/security/keychain_services) to securely store sensitive data. The Keychain is the macOS system for storing passwords, keys, certificates, and other secrets.
+## 💻 Platform Support
 
-- **Linux**: Coming soon - Planning to implement support using [libsecret](https://wiki.gnome.org/Projects/Libsecret) and/or [Secret Service API](https://specifications.freedesktop.org/secret-service/latest/), which provides secure storage through system services like GNOME Keyring or KDE Wallet.
+- **Windows** – Fully supported
+- **macOS** – Coming soon
+- **Linux** – Coming soon
 
-## Contributing
+---
 
-Contributions are welcome! Here are some ways you can contribute:
+## 🔐 Security Considerations
 
-- Implement support for additional platforms (macOS, Linux)
+- On Windows, encrypted data can only be accessed by the same user on the same machine
+- For extra protection, consider an additional encryption layer for critical data
+- Always use namespaces and meaningful key names to structure sensitive information
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! You can:
+
+- Add support for macOS or Linux
 - Improve documentation
-- Report bugs
-- Suggest new features
+- Report bugs or vulnerabilities
+- Suggest enhancements
 - Submit pull requests
 
-## Security Considerations
+---
 
-- The security of the stored data relies on the OS's native security features
-- On Windows, data is tied to the specific Windows user account
-- For highest security, consider implementing additional encryption layers for certain types of sensitive data
+## 📄 License
 
-  ## License
+This project is licensed under the **MIT License** – see the [LICENSE](LICENSE) file for full details.
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+---
