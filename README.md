@@ -1,7 +1,3 @@
-Absolutely! Below is the updated **README** that includes installation instructions for both **Maven** (which you already have) and **Gradle** users. I've placed it under the **Installation** section to make it clear for both types of users:
-
----
-
 # 🗝️ OsSecureStore
 
 [![](https://jitpack.io/v/qbit-spark/OsSecureStore.svg)](https://jitpack.io/#qbit-spark/OsSecureStore)
