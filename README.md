@@ -71,8 +71,8 @@ oauth.put("expires_in", 3600);
 oauth.put("token_type", "Bearer");
 
 SecureStorage.write()
-    .withEncryption("application-specific-encryption-key")
-    .to("service-oauth")
+    .withEncryption("application-specific-encryption-key") //This is requred at first 
+    .to("service-oauth")  //This is requred at second 
     .properties(oauth)
     .execute();
 ```
@@ -151,7 +151,7 @@ OsSecureStore.[PackageName].[CredentialIdentifier].CHUNK_1
 
 ```java
 SecureStorage.write()
-    .withEncryption(String)     // Optional: Custom encryption key
+    .withEncryption(String)     // Requred: Custom encryption key
     .to(String)                 // Required: Credential identifier
     .property(String, Object)   // Add single property
     .properties(Map)            // Add multiple properties
@@ -162,7 +162,7 @@ SecureStorage.write()
 
 ```java
 SecureStorage.read()
-    .withEncryption(String)     // Optional: Must match write encryption
+    .withEncryption(String)     // Requred: Must match write encryption
     .from(String)               // Required: Credential identifier
     .exists()                   // Returns boolean
     .getAllProperties()         // Returns Map<String, Object>
