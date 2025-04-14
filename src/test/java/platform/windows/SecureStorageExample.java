@@ -1,12 +1,11 @@
 package platform.windows;
 
 import com.OsSecureStore.exceptions.SecureStorageException;
-import com.OsSecureStore.platform.SecureStorage;
+import com.OsSecureStore.platform.SecureStore;
 import com.OsSecureStore.util.EncryptionUtil;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Example demonstrating the use of SecureStorage
@@ -50,7 +49,7 @@ public class SecureStorageExample {
 //        }
 
         // Store the credentials
-        boolean success = SecureStorage.write()
+        boolean success = SecureStore.write()
                 .withEncryption(encryptionKey)
                 .to("google-oauth")
                 .properties(oauth)
@@ -63,7 +62,7 @@ public class SecureStorageExample {
         System.out.println("\n=== Storing API Keys ===");
 
         // Store individual API keys
-        boolean success = SecureStorage.write()
+        boolean success = SecureStore.write()
                 .withEncryption(encryptionKey)
                 .to("github-api")
                 .property("key", "ghp_1234567890abcdefghijklmnopqrstuvwxyz")
@@ -77,7 +76,7 @@ public class SecureStorageExample {
         System.out.println("\n=== Retrieving Credentials ===");
 
         // Check if credentials exist
-        boolean oauthExists = SecureStorage.read()
+        boolean oauthExists = SecureStore.read()
                 .withEncryption(encryptionKey)
                 .from("google-oauth")
                 .exists();
@@ -86,7 +85,7 @@ public class SecureStorageExample {
 
         if (oauthExists) {
             // Retrieve all OAuth properties
-            Map<String, Object> credentials = SecureStorage.read()
+            Map<String, Object> credentials = SecureStore.read()
                     .withEncryption(encryptionKey)
                     .from("google-oauth")
                     .getAllProperties();
@@ -97,7 +96,7 @@ public class SecureStorageExample {
             }
 
             // Retrieve specific property
-            String accessToken = (String) SecureStorage.read()
+            String accessToken = (String) SecureStore.read()
                     .withEncryption(encryptionKey)
                     .from("google-oauth")
                     .getProperty("access_token");
@@ -106,7 +105,7 @@ public class SecureStorageExample {
         }
 
         // Get GitHub API key
-        String apiKey = (String) SecureStorage.read()
+        String apiKey = (String) SecureStore.read()
                 .withEncryption(encryptionKey)
                 .from("github-api")
                 .getProperty("key");
@@ -118,14 +117,14 @@ public class SecureStorageExample {
         System.out.println("\n=== Deleting Credentials ===");
 
         // Delete OAuth credentials
-        boolean success = SecureStorage.delete()
+        boolean success = SecureStore.delete()
                 .identifier("google-oauth")
                 .execute();
 
         System.out.println("OAuth credentials deleted: " + success);
 
         // Delete API key
-        success = SecureStorage.delete()
+        success = SecureStore.delete()
                 .identifier("github-api")
                 .execute();
 
