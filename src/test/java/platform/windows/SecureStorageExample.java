@@ -45,9 +45,9 @@ public class SecureStorageExample {
         oauth.put("description", "This is a large credential that will need to be chunked when stored, This is a large credential that will need to be chunked when stored, This is a large credential that will need to be chunked when stored,This is a large credential that will need to be chunked when stored,This is a large credential that will need to be chunked when stored");
 
         // Add many fields with random UUIDs to increase size
-        for (int i = 0; i < 50; i++) {
-            oauth.put("field" + i, UUID.randomUUID().toString().repeat(10));
-        }
+//        for (int i = 0; i < 50; i++) {
+//            oauth.put("field" + i, UUID.randomUUID().toString().repeat(10));
+//        }
 
         // Store the credentials
         boolean success = SecureStorage.write()

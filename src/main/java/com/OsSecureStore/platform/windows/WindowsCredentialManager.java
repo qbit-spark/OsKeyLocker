@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static java.rmi.server.LogStream.log;
+
 /**
  * Provides access to Windows Credential Manager API with chunking support
  */
@@ -159,8 +161,8 @@ public class WindowsCredentialManager {
         String encryptedValue = encryptionUtil.encrypt(jsonValue.toString());
 
         //Todo: lets print encrypted value
-        System.out.println("🚨Encrypted value: " + encryptedValue);
-        System.out.println("🚨 Encrypted value size: " + encryptedValue.length() + " bytes for key: " + key);
+        //System.out.println("🚨Encrypted value: " + encryptedValue);
+        //System.out.println("🚨 Encrypted value size: " + encryptedValue.length() + " bytes for key: " + key);
 
 
         // Check if chunking is needed
@@ -169,7 +171,7 @@ public class WindowsCredentialManager {
             // Store as a single credential
             addRawCredential(buildCredentialName(key), encryptedValue);
 
-            System.out.println("✅ Using single credential (no chunking needed)");
+            System.out.println("------ Using single credential (no chunking needed) -------");
 
             // Add metadata (no chunks)
             JSONObject metadata = new JSONObject();
@@ -180,7 +182,7 @@ public class WindowsCredentialManager {
             // Need to chunk the credential
             List<String> chunks = chunkString(encryptedValue, MAX_CREDENTIAL_SIZE);
 
-            System.out.println("🔄 Large value detected! Splitting into " + chunks.size() + " chunks");
+            System.out.println("----- Large value detected! Splitting into " + chunks.size() + " chunks -------");
 
             // Store metadata first
             JSONObject metadata = new JSONObject();
@@ -308,44 +310,6 @@ public class WindowsCredentialManager {
         }
     }
 
-//    /**
-//     * Deletes a credential and all its chunks from Windows Credential Manager
-//     *
-//     * @param key Credential key
-//     * @throws SecureStorageException if the credential cannot be deleted
-//     */
-//    public void deleteCredential(String key) throws SecureStorageException {
-//        // First check metadata to see if chunking is used
-//        String metadataKey = buildCredentialName(key + "." + METADATA_KEY);
-//        String encryptedMetadata;
-//
-//        try {
-//            encryptedMetadata = getRawCredential(metadataKey);
-//        } catch (Exception e) {
-//            // If metadata doesn't exist, just try to delete the main credential
-//            deleteRawCredential(buildCredentialName(key));
-//            return;
-//        }
-//
-//        if (encryptedMetadata != null) {
-//            String decryptedMetadata = encryptionUtil.decrypt(encryptedMetadata);
-//            JSONObject metadata = new JSONObject(decryptedMetadata);
-//
-//            int chunks = metadata.getInt("chunks");
-//
-//            if (chunks > 0) {
-//                // Delete all chunks
-//                for (int i = 0; i < chunks; i++) {
-//                    deleteRawCredential(buildChunkName(key, i));
-//                }
-//            }
-//
-//            // Delete main credential and metadata
-//            deleteRawCredential(buildCredentialName(key));
-//            deleteRawCredential(metadataKey);
-//        }
-//    }
-
 
     /**
      * Deletes a credential and all its chunks from Windows Credential Manager
@@ -376,7 +340,7 @@ public class WindowsCredentialManager {
                     if (chunks > 0) {
                         // Delete all chunks
                         for (int i = 0; i < chunks; i++) {
-                            System.out.println("🗑️ Deleting chunk " + (i+1) + " of " + chunks);
+                            //System.out.println("🗑️ Deleting chunk " + (i+1) + " of " + chunks);
                             deleteRawCredential(buildChunkName(key, i));
                         }
                     }
