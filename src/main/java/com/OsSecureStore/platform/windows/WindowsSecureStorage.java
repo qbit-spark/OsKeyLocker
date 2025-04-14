@@ -2,7 +2,9 @@ package com.OsSecureStore.platform.windows;
 
 import com.OsSecureStore.exceptions.SecureStorageException;
 import com.OsSecureStore.platform.PlatformSecureStorage;
+import com.OsSecureStore.util.EncryptionUtil;
 import com.OsSecureStore.util.PlatformDetector;
+import org.json.JSONObject;
 
 /**
  * Windows implementation of secure storage using Windows Credential Manager
@@ -10,6 +12,7 @@ import com.OsSecureStore.util.PlatformDetector;
 public class WindowsSecureStorage implements PlatformSecureStorage {
 
     private WindowsCredentialManager credManager;
+    private EncryptionUtil encryptionUtil;
     private boolean initialized = false;
 
     /**
@@ -19,16 +22,55 @@ public class WindowsSecureStorage implements PlatformSecureStorage {
         this.credManager = new WindowsCredentialManager();
     }
 
+    /**
+     * Initialize with app package name and encryption key
+     * @param packageName The application package name
+     * @param encryptionKey The encryption key to use
+     * @throws SecureStorageException if initialization fails
+     */
+    public void initialize(String packageName, String encryptionKey) throws SecureStorageException {
+        if (!isSupported()) {
+            throw new SecureStorageException("Windows platform is not supported on this system");
+        }
+
+        try {
+            credManager.setAppPrefix(packageName);
+            credManager.initialize(encryptionKey);
+            this.encryptionUtil = new EncryptionUtil(encryptionKey);
+            initialized = true;
+        } catch (Exception e) {
+            throw new SecureStorageException("Failed to initialize Windows credential manager", e);
+        }
+    }
+
+    /**
+     * Sets the encryption key for the credential manager
+     * @param encryptionKey The encryption key to use
+     * @throws SecureStorageException if the operation fails
+     */
+    public void setEncryptionKey(String encryptionKey) throws SecureStorageException {
+        if (!initialized) {
+            throw new SecureStorageException("WindowsSecureStorage not initialized");
+        }
+
+        try {
+            this.encryptionUtil = new EncryptionUtil(encryptionKey);
+            credManager.setEncryptionKey(encryptionKey);
+        } catch (Exception e) {
+            throw new SecureStorageException("Failed to set encryption key", e);
+        }
+    }
+
     @Override
     public byte[] encrypt(byte[] data) throws SecureStorageException {
-        // This method is kept for API compatibility but will not be used
-        throw new SecureStorageException("Direct encryption not supported; use storeCredential instead");
+        // This method is kept for API compatibility but will not be used directly
+        throw new SecureStorageException("Direct encryption not supported; use storeJsonCredential instead");
     }
 
     @Override
     public byte[] decrypt(byte[] encryptedData) throws SecureStorageException {
-        // This method is kept for API compatibility but will not be used
-        throw new SecureStorageException("Direct decryption not supported; use retrieveCredential instead");
+        // This method is kept for API compatibility but will not be used directly
+        throw new SecureStorageException("Direct decryption not supported; use retrieveJsonCredential instead");
     }
 
     /**
@@ -40,39 +82,36 @@ public class WindowsSecureStorage implements PlatformSecureStorage {
         if (!initialized) {
             initialize();
         }
-
-        System.out.println("Setting application prefix: " + prefix);
         credManager.setAppPrefix(prefix);
     }
 
     /**
-     * Stores a credential in Windows Credential Manager
+     * Stores a JSON credential in Windows Credential Manager
      * @param key The credential key/target name
-     * @param value The credential value/password
+     * @param jsonData The JSON data to store
      * @throws SecureStorageException if storage fails
      */
-    public void storeCredential(String key, String value) throws SecureStorageException {
+    public void storeJsonCredential(String key, JSONObject jsonData) throws SecureStorageException {
         if (!initialized) {
-            initialize();
+            throw new SecureStorageException("WindowsSecureStorage not initialized");
         }
 
         try {
-            //System.out.println("Storing credential with key: " + key);
-            credManager.addCredential(key, value);
+            credManager.addCredential(key, jsonData);
         } catch (Exception e) {
             throw new SecureStorageException("Failed to store credential", e);
         }
     }
 
     /**
-     * Retrieves a credential from Windows Credential Manager
+     * Retrieves a JSON credential from Windows Credential Manager
      * @param key The credential key/target name
-     * @return The credential value/password, or null if not found
+     * @return The JSON data, or null if not found
      * @throws SecureStorageException if retrieval fails
      */
-    public String retrieveCredential(String key) throws SecureStorageException {
+    public JSONObject retrieveJsonCredential(String key) throws SecureStorageException {
         if (!initialized) {
-            initialize();
+            throw new SecureStorageException("WindowsSecureStorage not initialized");
         }
 
         try {
@@ -86,13 +125,32 @@ public class WindowsSecureStorage implements PlatformSecureStorage {
     }
 
     /**
+     * Updates a specific field in a JSON credential
+     * @param key The credential key/target name
+     * @param jsonKey The JSON field to update
+     * @param jsonValue The new value for the field
+     * @throws SecureStorageException if the operation fails
+     */
+    public void updateCredentialField(String key, String jsonKey, Object jsonValue) throws SecureStorageException {
+        if (!initialized) {
+            throw new SecureStorageException("WindowsSecureStorage not initialized");
+        }
+
+        try {
+            credManager.updateCredentialField(key, jsonKey, jsonValue);
+        } catch (Exception e) {
+            throw new SecureStorageException("Failed to update credential field", e);
+        }
+    }
+
+    /**
      * Removes a credential from Windows Credential Manager
      * @param key The credential key/target name
      * @throws SecureStorageException if removal fails
      */
     public void removeCredential(String key) throws SecureStorageException {
         if (!initialized) {
-            initialize();
+            throw new SecureStorageException("WindowsSecureStorage not initialized");
         }
 
         try {
@@ -110,7 +168,7 @@ public class WindowsSecureStorage implements PlatformSecureStorage {
      */
     public boolean credentialExists(String key) throws SecureStorageException {
         if (!initialized) {
-            initialize();
+            throw new SecureStorageException("WindowsSecureStorage not initialized");
         }
 
         try {
@@ -127,7 +185,7 @@ public class WindowsSecureStorage implements PlatformSecureStorage {
         }
 
         try {
-            credManager.initialize();
+            credManager.initialize(null); // Use default encryption key
             initialized = true;
         } catch (Exception e) {
             throw new SecureStorageException("Failed to initialize Windows credential manager", e);
