@@ -1,4 +1,4 @@
-# 🗝️OsSecureStorage
+# 🗝️OsSecureStore
 
 [![](https://jitpack.io/v/qbit-spark/OsSecureStore.svg)](https://jitpack.io/#qbit-spark/OsSecureStore)
 
