@@ -2,15 +2,11 @@ package com.OsSecureStore;
 
 import com.OsSecureStore.exceptions.SecureStorageException;
 import com.OsSecureStore.platform.PlatformSecureStorage;
+import com.OsSecureStore.platform.windows.WindowsSecureStorage;
 
-import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.*;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
-import java.util.Properties;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
@@ -20,41 +16,46 @@ import java.util.jar.Manifest;
  */
 public class OsSecureStore {
 
-    private static final String DEFAULT_APP_NAME = "OsSecureStore";
+    private static final String DEFAULT_APP_NAME = "OsSecureStoreApp";
     private static String appName = null;
-    private static Path storageDir;
     private static PlatformSecureStorage platformStorage;
 
     static {
         try {
             platformStorage = SecureStorageFactory.getSecureStorage();
             platformStorage.initialize();
-
-            // Set default storage location
-            setDefaultStorageLocation();
         } catch (SecureStorageException e) {
-            // Will be thrown when methods are called
+            System.err.println("Error initializing secure storage: " + e.getMessage());
         }
     }
 
     /**
      * Sets the application name used for storage
-     * Only needed if automatic detection doesn't work or needs to be overridden
      * @param name Application name
      */
-    public static void setApplicationName(String name) {
+    public static void setApplicationName(String name) throws SecureStorageException {
+        //System.out.println("Setting application name to: " + name);
         appName = name;
-        setDefaultStorageLocation();
+        platformStorage.setAppPrefix(appName);
     }
 
-
     /**
-     * Sets a custom storage location
-     * @param directory Custom directory path
+     * Gets the current application name, detecting it if not explicitly set
+     * @return The application name
      */
-    public static void setStorageLocation(String directory) {
-        storageDir = Paths.get(directory);
-        createStorageDirectoryIfNeeded();
+    private static String getApplicationName() throws SecureStorageException {
+        // If app name was explicitly set, use it
+        if (appName != null) {
+            System.out.println("Using explicit application name: " + appName);
+            return appName;
+        }
+
+        // Otherwise auto-detect
+        String detectedName = detectApplicationName();
+        appName = detectedName; // Cache the result
+        System.out.println("Auto-detected application name: " + appName);
+        platformStorage.setAppPrefix(appName);
+        return detectedName;
     }
 
     /**
@@ -64,26 +65,23 @@ public class OsSecureStore {
      * @throws SecureStorageException if storage fails
      */
     public static void store(String key, String value) throws SecureStorageException {
-        try {
-            if (platformStorage == null) {
-                throw new SecureStorageException("Secure storage not initialized");
-            }
+        if (platformStorage == null) {
+            throw new SecureStorageException("Secure storage not initialized");
+        }
 
-            // Encrypt the value
-            byte[] encryptedData = platformStorage.encrypt(value.getBytes());
-            String encodedData = Base64.getEncoder().encodeToString(encryptedData);
+        // Ensure app name is set
+        if (appName == null) {
+            getApplicationName();
+        }
 
-            // Store in properties file
-            Properties props = loadProperties();
-            props.setProperty(key, encodedData);
-            saveProperties(props);
-        } catch (IOException e) {
-            throw new SecureStorageException("Failed to store value", e);
+        if (platformStorage instanceof WindowsSecureStorage) {
+            // Use direct credential storage
+            ((WindowsSecureStorage) platformStorage).storeCredential(key, value);
+        } else {
+            // Legacy implementation for other platforms until they're updated
+            throw new SecureStorageException("Platform not supported");
         }
     }
-
-
-
 
     /**
      * Retrieves a securely stored value
@@ -92,25 +90,21 @@ public class OsSecureStore {
      * @throws SecureStorageException if retrieval fails
      */
     public static String retrieve(String key) throws SecureStorageException {
-        try {
-            if (platformStorage == null) {
-                throw new SecureStorageException("Secure storage not initialized");
-            }
+        if (platformStorage == null) {
+            throw new SecureStorageException("Secure storage not initialized");
+        }
 
-            Properties props = loadProperties();
-            String encodedData = props.getProperty(key);
+        // Ensure app name is set
+        if (appName == null) {
+            getApplicationName();
+        }
 
-            if (encodedData == null) {
-                return null;
-            }
-
-            // Decode and decrypt
-            byte[] encryptedData = Base64.getDecoder().decode(encodedData);
-            byte[] decryptedData = platformStorage.decrypt(encryptedData);
-
-            return new String(decryptedData);
-        } catch (IOException e) {
-            throw new SecureStorageException("Failed to retrieve value", e);
+        if (platformStorage instanceof WindowsSecureStorage) {
+            // Use direct credential retrieval
+            return ((WindowsSecureStorage) platformStorage).retrieveCredential(key);
+        } else {
+            // Legacy implementation for other platforms until they're updated
+            throw new SecureStorageException("Platform not supported");
         }
     }
 
@@ -120,12 +114,21 @@ public class OsSecureStore {
      * @throws SecureStorageException if removal fails
      */
     public static void remove(String key) throws SecureStorageException {
-        try {
-            Properties props = loadProperties();
-            props.remove(key);
-            saveProperties(props);
-        } catch (IOException e) {
-            throw new SecureStorageException("Failed to remove value", e);
+        if (platformStorage == null) {
+            throw new SecureStorageException("Secure storage not initialized");
+        }
+
+        // Ensure app name is set
+        if (appName == null) {
+            getApplicationName();
+        }
+
+        if (platformStorage instanceof WindowsSecureStorage) {
+            // Use direct credential removal
+            ((WindowsSecureStorage) platformStorage).removeCredential(key);
+        } else {
+            // Legacy implementation for other platforms until they're updated
+            throw new SecureStorageException("Platform not supported");
         }
     }
 
@@ -136,88 +139,30 @@ public class OsSecureStore {
      * @throws SecureStorageException if the check fails
      */
     public static boolean exists(String key) throws SecureStorageException {
-        try {
-            Properties props = loadProperties();
-            return props.containsKey(key);
-        } catch (IOException e) {
-            throw new SecureStorageException("Failed to check if key exists", e);
+        if (platformStorage == null) {
+            throw new SecureStorageException("Secure storage not initialized");
+        }
+
+        // Ensure app name is set
+        if (appName == null) {
+            getApplicationName();
+        }
+
+        if (platformStorage instanceof WindowsSecureStorage) {
+            // Use direct credential check
+            return ((WindowsSecureStorage) platformStorage).credentialExists(key);
+        } else {
+            // Legacy implementation for other platforms until they're updated
+            throw new SecureStorageException("Platform not supported");
         }
     }
 
     /**
-     * Clears all stored values
-     * @throws SecureStorageException if clearing fails
+     * Clears all stored values (not supported with Credential Manager)
+     * @throws SecureStorageException always thrown as this operation isn't supported
      */
     public static void clear() throws SecureStorageException {
-        try {
-            Files.deleteIfExists(getPropertiesPath());
-        } catch (IOException e) {
-            throw new SecureStorageException("Failed to clear secure storage", e);
-        }
-    }
-
-    private static void setDefaultStorageLocation() {
-        // Auto-detect application name if not specified
-        if (appName == null) {
-            appName = detectApplicationName();
-            System.out.println("Detected application name: " + appName);
-        }
-
-
-        String osName = System.getProperty("os.name").toLowerCase();
-        String userHome = System.getProperty("user.home");
-
-        if (osName.contains("win")) {
-            // Windows: %APPDATA%\AppName
-            String appData = System.getenv("APPDATA");
-            if (appData == null) {
-                appData = userHome + "\\AppData\\Roaming";
-            }
-            storageDir = Paths.get(appData, appName);
-        } else if (osName.contains("mac")) {
-            // macOS: ~/Library/Application Support/AppName
-            storageDir = Paths.get(userHome, "Library", "Application Support", appName);
-        } else {
-            // Linux/Unix: ~/.config/AppName
-            storageDir = Paths.get(userHome, ".config", appName);
-        }
-
-        createStorageDirectoryIfNeeded();
-    }
-
-    private static void createStorageDirectoryIfNeeded() {
-        try {
-            if (!Files.exists(storageDir)) {
-                Files.createDirectories(storageDir);
-            }
-        } catch (IOException e) {
-            // Will be handled when storage methods are called
-        }
-    }
-
-    private static Path getPropertiesPath() {
-        return storageDir.resolve("secure-storage.properties");
-    }
-
-    private static Properties loadProperties() throws IOException {
-        Properties props = new Properties();
-        Path path = getPropertiesPath();
-
-        if (Files.exists(path)) {
-            try (InputStream in = Files.newInputStream(path)) {
-                props.load(in);
-            }
-        }
-
-        return props;
-    }
-
-    private static void saveProperties(Properties props) throws IOException {
-        Path path = getPropertiesPath();
-
-        try (OutputStream out = Files.newOutputStream(path)) {
-            props.store(out, "OsSecureStore encrypted data");
-        }
+        throw new SecureStorageException("Clear operation not supported with OS credential stores");
     }
 
 
@@ -238,11 +183,11 @@ public class OsSecureStore {
             return appName;
         }
 
-        // 3. Ultimate fallback: Use a hash of the user's classpath
+        // 3. Ultimate fallback: Use a hash of the user's classpath or default
         return generateClasspathHash();
     }
 
-// --- Helper Methods ---
+    // Keep the other detection methods as they are...
 
     /**
      * Checks JAR manifests in the classpath for "Implementation-Title" (user-friendly name).
@@ -250,17 +195,19 @@ public class OsSecureStore {
     private static String detectFromJarManifest() {
         try {
             ClassLoader cl = ClassLoader.getSystemClassLoader();
-            URL[] urls = ((URLClassLoader) cl).getURLs();
+            if (cl instanceof URLClassLoader) {
+                URL[] urls = ((URLClassLoader) cl).getURLs();
 
-            for (URL url : urls) {
-                String path = url.getPath();
-                if (path.endsWith(".jar") && !path.contains("ossecurestore")) {
-                    try (JarFile jar = new JarFile(path)) {
-                        Manifest manifest = jar.getManifest();
-                        if (manifest != null) {
-                            String title = manifest.getMainAttributes().getValue("Implementation-Title");
-                            if (title != null && !title.isEmpty()) {
-                                return title; // e.g., "ProjectX"
+                for (URL url : urls) {
+                    String path = url.getPath();
+                    if (path.endsWith(".jar") && !path.contains("ossecurestore")) {
+                        try (JarFile jar = new JarFile(path)) {
+                            Manifest manifest = jar.getManifest();
+                            if (manifest != null) {
+                                String title = manifest.getMainAttributes().getValue("Implementation-Title");
+                                if (title != null && !title.isEmpty()) {
+                                    return title; // e.g., "ProjectX"
+                                }
                             }
                         }
                     }
@@ -298,16 +245,18 @@ public class OsSecureStore {
             byte[] hash = md.digest(classpath.getBytes());
             return "app-" + bytesToHex(hash).substring(0, 8); // e.g., "app-a3c8f2b1"
         } catch (Exception e) {
-            return "app-" + System.currentTimeMillis();
+            return DEFAULT_APP_NAME; // Use default app name as ultimate fallback
         }
     }
 
-
-    // Helper method to convert byte array to hex string
+    /**
+     * Helper method to convert byte array to hex string
+     */
     private static String bytesToHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
         for (byte b : bytes) {
             sb.append(String.format("%02x", b));
         }
         return sb.toString();
-}}
+    }
+}

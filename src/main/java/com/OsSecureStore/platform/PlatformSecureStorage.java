@@ -4,7 +4,7 @@ import com.OsSecureStore.exceptions.SecureStorageException;
 
 /**
  * Platform-specific secure storage interface
- * Provides encryption and decryption operations using OS-native security features
+ * Provides operations for secure credential storage
  */
 public interface PlatformSecureStorage {
 
@@ -35,4 +35,11 @@ public interface PlatformSecureStorage {
      * @return true if supported, false otherwise
      */
     boolean isSupported();
+
+    /**
+     * Sets the application prefix for credentials
+     * @param prefix Application prefix
+     * @throws SecureStorageException if the operation fails
+     */
+    void setAppPrefix(String prefix) throws SecureStorageException;
 }
