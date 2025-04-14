@@ -1,30 +1,22 @@
-# 🗝️ OsSecureStore
+# 🗝️OsSecureStorage
 
 [![](https://jitpack.io/v/qbit-spark/OsSecureStore.svg)](https://jitpack.io/#qbit-spark/OsSecureStore)
 
-**OsSecureStore** is a cross-platform secure storage library for Java applications that leverages native OS-level security to safely store sensitive data like API keys, passwords, tokens, and credentials — without managing encryption keys yourself.
+SecureStorage is a robust, cross-platform Java library designed to provide secure credential management using native OS security features. The library enables developers to safely store sensitive information like API keys, OAuth tokens, passwords, and other credentials without the complexity of managing encryption infrastructure.
 
----
+## Features
 
-## ✨ Features
+- **Native OS Security Integration**: Leverages Windows DPAPI with an additional layer of AES-GCM encryption
+- **Intuitive Fluent API**: Modern builder pattern for clean, readable code
+- **Package-Based Isolation**: Automatic isolation of credentials by application package
+- **Large Data Support**: Automatic chunking mechanism that bypasses Windows Credential Manager's 2048-character limitation, allowing you to store credentials of unlimited size without any additional code.
+- **Customizable Encryption**: Optional additional encryption layer with application-defined keys
 
-- 🔒 **OS-native security** – Currently supports Windows DPAPI (macOS & Linux support coming soon)
-- 🧩 **Simple API** – Easy-to-use Java interface for storing and retrieving secure values
-- 🧠 **Smart app detection** – Automatically detects application name for storage context
-- 📂 **Flexible storage** – Organize data using key-value pairs or grouped namespaces
-- 🔗 **JNI integration** – Securely connects to Windows DPAPI for robust native encryption
+## Installation
 
----
+### Maven
 
-## 📦 Installation
-
-### Using JitPack
-
-To use **OsSecureStore** in your project, you can choose between **Maven** or **Gradle** as your build system.
-
-#### **For Maven users**:
-
-1. Add JitPack repository to your `pom.xml`:
+Add the JitPack repository to your `pom.xml`:
 
 ```xml
 <repositories>
@@ -35,139 +27,162 @@ To use **OsSecureStore** in your project, you can choose between **Maven** or **
 </repositories>
 ```
 
-2. Then add the dependency:
+Then add the dependency:
 
 ```xml
 <dependencies>
     <dependency>
         <groupId>com.github.qbit-spark</groupId>
         <artifactId>OsSecureStore</artifactId>
-        <version>v1.0.2</version>
+        <version>{version}</version>
     </dependency>
 </dependencies>
 ```
 
-#### **For Gradle users**:
-
-1. Add JitPack repository to your `build.gradle`:
+### Gradle
 
 ```groovy
 repositories {
     maven { url "https://jitpack.io" }
 }
-```
 
-2. Then add the dependency:
-
-```groovy
 dependencies {
-    implementation 'com.github.qbit-spark:OsSecureStore:v1.0.2'
+    implementation 'com.github.qbit-spark:OsSecureStore:{version}'
 }
 ```
 
----
+## Usage
 
-## 🚀 Quick Start
-
-### Basic Usage
+### Storing Credentials
 
 ```java
-// Store a sensitive value
-OsSecureStore.store("github.api_key", "ghp_1234567890abcdefghijklmnopqrstuvwxyz");
+// Store API credentials
+boolean success = SecureStorage.write()
+    .to("github-api")
+    .property("key", "ghp_1234567890abcdefghijklmnopqrstuvwxyz")
+    .property("username", "developer@organization.com")
+    .execute();
 
-// Retrieve the value
-String apiKey = OsSecureStore.retrieve("github.api_key");
+// Store multiple properties with custom encryption
+Map<String, Object> oauth = new HashMap<>();
+oauth.put("access_token", "eyJ0eXAiOiJKV1QiLCJhbGc...");
+oauth.put("refresh_token", "eyJhbGciOiJIUzI1NiIsInR5cCI...");
+oauth.put("expires_in", 3600);
+oauth.put("token_type", "Bearer");
 
-// Check if the key exists
-boolean exists = OsSecureStore.exists("github.api_key");
-
-// Remove a specific key
-OsSecureStore.remove("github.api_key");
-
-// Clear all stored data
-OsSecureStore.clear();
+SecureStorage.write()
+    .withEncryption("application-specific-encryption-key")
+    .to("service-oauth")
+    .properties(oauth)
+    .execute();
 ```
 
-### Using `SecureDataManager`
-
-Organize related credentials using namespaces:
+### Retrieving Credentials
 
 ```java
-// Create a manager with a namespace
-SecureDataManager authManager = new SecureDataManager("authentication");
+// Verify credential existence
+boolean exists = SecureStorage.read()
+    .from("github-api")
+    .exists();
 
-// Store individual credentials
-authManager.storeValue("username", "user@example.com");
-authManager.storeValue("password", "MyS3cur3P@ssw0rd!");
+// Retrieve specific property
+String apiKey = (String) SecureStorage.read()
+    .from("github-api")
+    .getProperty("key");
 
-// Store grouped OAuth tokens
-Map<String, String> oauthTokens = SecureDataManager.createAuthCredentials(
-    "access-token-value", 
-    "refresh-token-value"
-);
-authManager.storeValueGroup("google", oauthTokens);
+// Retrieve all properties with custom encryption
+Map<String, Object> credentials = SecureStorage.read()
+    .withEncryption("application-specific-encryption-key")
+    .from("service-oauth")
+    .getAllProperties();
 
-// Retrieve values
-String username = authManager.loadValue("username");
-String googleAccessToken = authManager.loadValue("google.access");
+// Access individual properties
+String accessToken = (String) credentials.get("access_token");
+Integer expiresIn = (Integer) credentials.get("expires_in");
 ```
 
-Set a custom application name (optional):
+### Removing Credentials
 
 ```java
-OsSecureStore.setApplicationName("MyApplication");
+// Delete credentials when no longer needed
+SecureStorage.delete()
+    .identifier("github-api")
+    .execute();
 ```
 
----
+## Security Architecture
 
-## ⚙️ How It Works
+SecureStorage implements a multi-layered security approach:
 
-OsSecureStore encrypts data using **platform-native security features**, then stores it in a local encrypted file. Your app never handles encryption keys directly.
+1. **Application Isolation Layer**: Credentials are namespaced by application package, preventing cross-application access
+2. **Cryptographic Layer**: All data is encrypted using AES-GCM with unique initialization vectors
+3. **OS Security Layer**: Windows Data Protection API provides OS-level encryption tied to user accounts
+4. **Optional Application Layer**: Additional encryption using application-provided keys
 
-| Platform | Backend Used | Notes |
-|----------|--------------|-------|
-| Windows  | [DPAPI](https://en.wikipedia.org/wiki/Data_Protection_API) | Fully supported |
-| macOS    | [Keychain Services](https://developer.apple.com/documentation/security/keychain_services) | Coming soon |
-| Linux    | [libsecret](https://wiki.gnome.org/Projects/Libsecret), Secret Service API | Coming soon |
+This defense-in-depth strategy ensures data remains secure even if one security layer is compromised.
 
-### ✅ Benefits
+## Technical Details
 
-- Encryption keys never leave the OS
-- Data is tied to the current user profile
-- No need to manage custom encryption logic
+### Data Storage Format
 
----
+Credentials are stored in the following format:
+```
+OsSecureStore.[PackageName].[CredentialIdentifier]
+```
 
-## 💻 Platform Support
+Large credentials are automatically split into manageable chunks with metadata to track the structure:
+```
+OsSecureStore.[PackageName].[CredentialIdentifier].metadata
+OsSecureStore.[PackageName].[CredentialIdentifier].CHUNK_0
+OsSecureStore.[PackageName].[CredentialIdentifier].CHUNK_1
+...
+```
 
-- **Windows** – Fully supported
-- **macOS** – Coming soon
-- **Linux** – Coming soon
+### Security Considerations
 
----
+- Encryption keys should be securely managed and not hardcoded
+- For highest security, use unique encryption keys for different credential sets
+- Consider implementing key rotation policies for long-lived credentials
+- The library does not provide network isolation; secure transmission is the application's responsibility
 
-## 🔐 Security Considerations
+## API Reference
 
-- On Windows, encrypted data can only be accessed by the same user on the same machine
-- For extra protection, consider an additional encryption layer for critical data
-- Always use namespaces and meaningful key names to structure sensitive information
+### Write Operations
 
----
+```java
+SecureStorage.write()
+    .withEncryption(String)     // Optional: Custom encryption key
+    .to(String)                 // Required: Credential identifier
+    .property(String, Object)   // Add single property
+    .properties(Map)            // Add multiple properties
+    .execute()                  // Returns boolean success status
+```
 
-## 🤝 Contributing
+### Read Operations
 
-We welcome contributions! You can:
+```java
+SecureStorage.read()
+    .withEncryption(String)     // Optional: Must match write encryption
+    .from(String)               // Required: Credential identifier
+    .exists()                   // Returns boolean
+    .getAllProperties()         // Returns Map<String, Object>
+    .getProperty(String)        // Returns Object for specific key
+```
 
-- Add support for macOS or Linux
-- Improve documentation
-- Report bugs or vulnerabilities
-- Suggest enhancements
-- Submit pull requests
+### Delete Operations
 
----
+```java
+SecureStorage.delete()
+    .identifier(String)         // Required: Credential identifier
+    .execute()                  // Returns boolean success status
+```
 
-## 📄 License
+## Platform Support
 
-This project is licensed under the **MIT License** – see the [LICENSE](LICENSE) file for full details.
+- **Windows**: Full support
+- **macOS**: Planned for future release
+- **Linux**: Planned for future release
 
----
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
