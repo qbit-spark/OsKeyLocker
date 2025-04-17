@@ -71,7 +71,7 @@ oauth.put("expires_in", 3600);
 oauth.put("token_type", "Bearer");
 
 SecureStorage.write()
-    .withEncryption("application-specific-encryption-key") //This is requred at first 
+    .withEncryption("application-specific-encryption-key") //This is requred at first and highly recommended derive it from multiple sources (user input + machine-specific information) PBKDF2, Argon2, or similar with high iteration counts
     .to("service-oauth")  //This is requred at second 
     .properties(oauth)
     .execute();
