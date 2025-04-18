@@ -1,6 +1,6 @@
 # 🗝️OsKeyLocker  
 
-[![](https://jitpack.io/v/qbit-spark/OsKeyLocker.svg)](https://jitpack.io/#qbit-spark/OsKeyLocker)
+[![](https://jitpack.io/v/qbit-spark/OsKeyLocker-lib.svg)](https://jitpack.io/#qbit-spark/OsKeyLocker-lib)
 
 OsKeyLocker is a robust, cross-platform Java library designed to provide secure credential management using native OS security features. The library enables developers to safely store sensitive information like API keys, OAuth tokens, passwords, and other credentials without the complexity of managing encryption infrastructure.
 
@@ -33,7 +33,7 @@ Then add the dependency:
 <dependencies>
     <dependency>
         <groupId>com.github.qbit-spark</groupId>
-        <artifactId>OsKeyLocker</artifactId>
+        <artifactId>OsKeyLocker-lib</artifactId>
         <version>{version}</version>
     </dependency>
 </dependencies>
@@ -47,7 +47,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.qbit-spark:OsKeyLocker:{version}'
+    implementation 'com.github.qbit-spark:OsKeyLocker-lib:{version}'
 }
 ```
 
@@ -86,12 +86,12 @@ boolean exists = SecureStorage.read()
     .exists();
 
 // Retrieve specific property
-String apiKey = (String) SecureStorage.read()
+String apiKey = (String) KeyLocker.read()
     .from("github-api")
     .getProperty("key");
 
 // Retrieve all properties with custom encryption
-Map<String, Object> credentials = SecureStorage.read()
+Map<String, Object> credentials = KeyLocker.read()
     .withEncryption("application-specific-encryption-key")
     .from("service-oauth")
     .getAllProperties();
@@ -105,7 +105,7 @@ Integer expiresIn = (Integer) credentials.get("expires_in");
 
 ```java
 // Delete credentials when no longer needed
-SecureStorage.delete()
+KeyLocker.delete()
     .identifier("github-api")
     .execute();
 ```
@@ -150,7 +150,7 @@ OsKeyLocker.[PackageName].[CredentialIdentifier].CHUNK_1
 ### Write Operations
 
 ```java
-SecureStorage.write()
+KeyLocker.write()
     .withEncryption(String)     // Requred: Custom encryption key
     .to(String)                 // Required: Credential identifier
     .property(String, Object)   // Add single property
@@ -161,7 +161,7 @@ SecureStorage.write()
 ### Read Operations
 
 ```java
-SecureStorage.read()
+KeyLocker.read()
     .withEncryption(String)     // Requred: Must match write encryption
     .from(String)               // Required: Credential identifier
     .exists()                   // Returns boolean
@@ -172,7 +172,7 @@ SecureStorage.read()
 ### Delete Operations
 
 ```java
-SecureStorage.delete()
+KeyLocker.delete()
     .identifier(String)         // Required: Credential identifier
     .execute()                  // Returns boolean success status
 ```
