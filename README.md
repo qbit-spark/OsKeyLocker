@@ -1,8 +1,8 @@
-# 🗝️OsKeyLocker 
+# 🗝️OsSecureStore  
 
 [![](https://jitpack.io/v/qbit-spark/OsKeyLocker.svg)](https://jitpack.io/#qbit-spark/OsKeyLocker)
 
-OsKeyLocker is a robust, cross-platform Java library designed to provide secure credential management using native OS security features. The library enables developers to safely store sensitive information like API keys, OAuth tokens, passwords, and other credentials without the complexity of managing encryption infrastructure.
+OsSecureStore is a robust, cross-platform Java library designed to provide secure credential management using native OS security features. The library enables developers to safely store sensitive information like API keys, OAuth tokens, passwords, and other credentials without the complexity of managing encryption infrastructure.
 
 ## Features
 
@@ -33,7 +33,7 @@ Then add the dependency:
 <dependencies>
     <dependency>
         <groupId>com.github.qbit-spark</groupId>
-        <artifactId>OsKeyLocker</artifactId>
+        <artifactId>OsSecureStore</artifactId>
         <version>{version}</version>
     </dependency>
 </dependencies>
@@ -47,7 +47,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.qbit-spark:OsKeyLocker:{version}'
+    implementation 'com.github.qbit-spark:OsSecureStore:{version}'
 }
 ```
 
