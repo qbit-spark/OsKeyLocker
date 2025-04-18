@@ -57,7 +57,7 @@ dependencies {
 
 ```java
 // Store API credentials
-boolean success = SecureStorage.write()
+boolean success = KeyLocker.write()
     .to("github-api")
     .property("key", "ghp_1234567890abcdefghijklmnopqrstuvwxyz")
     .property("username", "developer@organization.com")
@@ -70,7 +70,7 @@ oauth.put("refresh_token", "eyJhbGciOiJIUzI1NiIsInR5cCI...");
 oauth.put("expires_in", 3600);
 oauth.put("token_type", "Bearer");
 
-SecureStorage.write()
+KeyLocker.write()
     .withEncryption("application-specific-encryption-key") //This is requred at first and highly recommended derive it from multiple sources (user input + machine-specific information) PBKDF2, Argon2, or similar with high iteration counts
     .to("service-oauth")  //This is requred at second 
     .properties(oauth)
@@ -81,7 +81,7 @@ SecureStorage.write()
 
 ```java
 // Verify credential existence
-boolean exists = SecureStorage.read()
+boolean exists = KeyLocker.read()
     .from("github-api")
     .exists();
 
