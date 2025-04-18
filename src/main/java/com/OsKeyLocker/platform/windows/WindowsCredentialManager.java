@@ -90,7 +90,7 @@ public class WindowsCredentialManager {
      * Creates a new WindowsCredentialManager instance
      */
     public WindowsCredentialManager() {
-        this.appPrefix = "OsSecureStore";
+        this.appPrefix = "OsKeyLocker";
     }
 
     /**
@@ -127,7 +127,7 @@ public class WindowsCredentialManager {
      *                                Sets the application prefix for credential names based on package name
      */
     public void setAppPrefix(String packageName) {
-        this.appPrefix = "OsSecureStore." + packageName;
+        this.appPrefix = "OsKeyLocker." + packageName;
     }
 
     /**
@@ -214,7 +214,7 @@ public class WindowsCredentialManager {
         CREDENTIAL credential = new CREDENTIAL();
         credential.Type = CRED_TYPE_GENERIC;
         credential.TargetName = credName;
-        credential.Comment = "Stored by OsSecureStore";
+        credential.Comment = "Stored by OsKeyLocker";
         credential.Persist = CRED_PERSIST_LOCAL_MACHINE;
         credential.UserName = System.getProperty("user.name");
 
