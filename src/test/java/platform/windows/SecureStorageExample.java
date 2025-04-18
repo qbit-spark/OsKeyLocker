@@ -15,7 +15,7 @@ public class SecureStorageExample {
     public static void main(String[] args) throws SecureStorageException {
 
 
-            // Generate a random encryption key (or use a fixed one in production, but be careful with) hardcoding)
+            // Generate a random encryption key (or use a fixed one in production, but be careful with) hardcoding-- best way is to derive it from a password, or use a key management system)
             String encryptionKey = EncryptionUtil.generateEncryptionKey();
             System.out.println("Using encryption key: " + encryptionKey);
 
