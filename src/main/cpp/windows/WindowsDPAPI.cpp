@@ -1,9 +1,9 @@
 #include <windows.h>
 #include <dpapi.h>
 #include <jni.h>
-#include "com_OsSecureStore_platform_windows_WindowsDPAPI.h"
+#include "com_OsKeyLocker_platform_windows_WindowsDPAPI.h"
 
-JNIEXPORT jbyteArray JNICALL Java_com_OsSecureStore_platform_windows_WindowsDPAPI_protect
+JNIEXPORT jbyteArray JNICALL Java_com_OsKeyLocker_platform_windows_WindowsDPAPI_protect
   (JNIEnv *env, jobject obj, jbyteArray data) {
 
     jbyte* dataBytes = env->GetByteArrayElements(data, NULL);
@@ -15,7 +15,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_OsSecureStore_platform_windows_WindowsDPAP
 
     DATA_BLOB dataOut;
 
-    if (CryptProtectData(&dataIn, L"OsSecureStore", NULL, NULL, NULL, 0, &dataOut)) {
+    if (CryptProtectData(&dataIn, L"OsKeyLocker", NULL, NULL, NULL, 0, &dataOut)) {
         jbyteArray result = env->NewByteArray(dataOut.cbData);
         env->SetByteArrayRegion(result, 0, dataOut.cbData, (jbyte*)dataOut.pbData);
         LocalFree(dataOut.pbData);
@@ -27,7 +27,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_OsSecureStore_platform_windows_WindowsDPAP
     }
 }
 
-JNIEXPORT jbyteArray JNICALL Java_com_OsSecureStore_platform_windows_WindowsDPAPI_unprotect
+JNIEXPORT jbyteArray JNICALL Java_com_OsKeyLocker_platform_windows_WindowsDPAPI_unprotect
   (JNIEnv *env, jobject obj, jbyteArray data) {
 
     jbyte* dataBytes = env->GetByteArrayElements(data, NULL);

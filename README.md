@@ -1,8 +1,8 @@
-# 🗝️OsSecureStore  
+# 🗝️OsKeyLocker  
 
 [![](https://jitpack.io/v/qbit-spark/OsKeyLocker.svg)](https://jitpack.io/#qbit-spark/OsKeyLocker)
 
-OsSecureStore is a robust, cross-platform Java library designed to provide secure credential management using native OS security features. The library enables developers to safely store sensitive information like API keys, OAuth tokens, passwords, and other credentials without the complexity of managing encryption infrastructure.
+OsKeyLocker is a robust, cross-platform Java library designed to provide secure credential management using native OS security features. The library enables developers to safely store sensitive information like API keys, OAuth tokens, passwords, and other credentials without the complexity of managing encryption infrastructure.
 
 ## Features
 
@@ -33,7 +33,7 @@ Then add the dependency:
 <dependencies>
     <dependency>
         <groupId>com.github.qbit-spark</groupId>
-        <artifactId>OsSecureStore</artifactId>
+        <artifactId>OsKeyLocker</artifactId>
         <version>{version}</version>
     </dependency>
 </dependencies>
@@ -47,7 +47,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.qbit-spark:OsSecureStore:{version}'
+    implementation 'com.github.qbit-spark:OsKeyLocker:{version}'
 }
 ```
 
@@ -127,14 +127,14 @@ This defense-in-depth strategy ensures data remains secure even if one security 
 
 Credentials are stored in the following format:
 ```
-OsSecureStore.[PackageName].[CredentialIdentifier]
+OsKeyLocker.[PackageName].[CredentialIdentifier]
 ```
 
 Large credentials are automatically split into manageable chunks with metadata to track the structure:
 ```
-OsSecureStore.[PackageName].[CredentialIdentifier].metadata
-OsSecureStore.[PackageName].[CredentialIdentifier].CHUNK_0
-OsSecureStore.[PackageName].[CredentialIdentifier].CHUNK_1
+OsKeyLocker.[PackageName].[CredentialIdentifier].metadata
+OsKeyLocker.[PackageName].[CredentialIdentifier].CHUNK_0
+OsKeyLocker.[PackageName].[CredentialIdentifier].CHUNK_1
 ...
 ```
 
