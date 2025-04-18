@@ -1,11 +1,10 @@
-package com.OsSecureStore;
+package com.OsKeylocker;
 
-import com.OsSecureStore.exceptions.SecureStorageException;
-import com.OsSecureStore.platform.PlatformSecureStorage;
-import com.OsSecureStore.platform.windows.WindowsSecureStorage;
-import com.OsSecureStore.util.PackageDetector;
+import com.OsKeylocker.exceptions.OsKeylockerExceptionException;
+import com.OsKeylocker.platform.PlatformKeylocker;
+import com.OsKeylocker.platform.windows.WindowsKeylocker;
+import com.OsKeylocker.util.PackageDetector;
 import org.json.JSONObject;
-
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,29 +13,29 @@ import java.util.Map;
  * Internal implementation of secure storage operations
  * Not intended for direct use - use SecureStorage class instead
  */
-public class OsSecureStore {
+public class OsKeyLockerStore {
 
-    private static final String DEFAULT_ENCRYPTION_KEY = "OsSecureStore-DefaultKey-DoNotUse";
+    private static final String DEFAULT_ENCRYPTION_KEY = "OsKeylocker-DefaultKey-DoNotUse";
     private static String encryptionKey = DEFAULT_ENCRYPTION_KEY;
     private static String storageKey = "default";
     private Map<String, Object> properties;
     private static String appPackageName;
-    private static PlatformSecureStorage platformStorage;
+    private static PlatformKeylocker platformStorage;
 
     static {
         try {
             platformStorage = SecureStorageFactory.getSecureStorage();
             appPackageName = PackageDetector.detectCallingPackage();
-            ((WindowsSecureStorage) platformStorage).initialize(appPackageName, DEFAULT_ENCRYPTION_KEY);
-        } catch (SecureStorageException e) {
+            ((WindowsKeylocker) platformStorage).initialize(appPackageName, DEFAULT_ENCRYPTION_KEY);
+        } catch (OsKeylockerExceptionException e) {
             System.err.println("Error initializing secure storage: " + e.getMessage());
         }
     }
 
     /**
-     * Creates a new OsSecureStore instance
+     * Creates a new OsKeylocker store instance
      */
-    public OsSecureStore() {
+    public OsKeyLockerStore() {
         // Constructor intentionally package-private
     }
 
@@ -53,7 +52,7 @@ public class OsSecureStore {
      * @param key The encryption key to use
      * @return This instance for chaining
      */
-    public OsSecureStore setEncryptionKey(String key) {
+    public OsKeyLockerStore setEncryptionKey(String key) {
         this.encryptionKey = key;
         return this;
     }
@@ -63,7 +62,7 @@ public class OsSecureStore {
      * @param key The storage key to use
      * @return This instance for chaining
      */
-    public OsSecureStore setStorageKey(String key) {
+    public OsKeyLockerStore setStorageKey(String key) {
         this.storageKey = key;
         return this;
     }
@@ -73,7 +72,7 @@ public class OsSecureStore {
      * @param properties Map of properties to store
      * @return This instance for chaining
      */
-    public OsSecureStore setProperties(Map<String, Object> properties) {
+    public OsKeyLockerStore setProperties(Map<String, Object> properties) {
         this.properties = properties;
         return this;
     }
@@ -81,21 +80,21 @@ public class OsSecureStore {
     /**
      * Stores the properties using the configured settings
      * @return This instance for chaining
-     * @throws SecureStorageException if storage fails
+     * @throws OsKeylockerExceptionException if storage fails
      */
-    public  OsSecureStore store() throws SecureStorageException {
+    public  OsKeyLockerStore store() throws OsKeylockerExceptionException {
         if (properties == null || properties.isEmpty()) {
-            throw new SecureStorageException("No properties to store");
+            throw new OsKeylockerExceptionException("No properties to store");
         }
 
         if (platformStorage == null) {
-            throw new SecureStorageException("Secure storage not initialized");
+            throw new OsKeylockerExceptionException("Secure storage not initialized");
         }
 
-        if (platformStorage instanceof WindowsSecureStorage) {
+        if (platformStorage instanceof WindowsKeylocker) {
             // Update encryption key if needed
             if (!encryptionKey.equals(DEFAULT_ENCRYPTION_KEY)) {
-                ((WindowsSecureStorage) platformStorage).setEncryptionKey(encryptionKey);
+                ((WindowsKeylocker) platformStorage).setEncryptionKey(encryptionKey);
             }
 
             // Convert properties to JSONObject
@@ -105,9 +104,9 @@ public class OsSecureStore {
             }
 
             // Store the data
-            ((WindowsSecureStorage) platformStorage).storeJsonCredential(storageKey, data);
+            ((WindowsKeylocker) platformStorage).storeJsonCredential(storageKey, data);
         } else {
-            throw new SecureStorageException("Platform not supported");
+            throw new OsKeylockerExceptionException("Platform not supported");
         }
 
         return this;
@@ -116,21 +115,21 @@ public class OsSecureStore {
     /**
      * Retrieves stored properties
      * @return Map of stored properties
-     * @throws SecureStorageException if retrieval fails
+     * @throws OsKeylockerExceptionException if retrieval fails
      */
-    public static Map<String, Object> retrieve() throws SecureStorageException {
+    public static Map<String, Object> retrieve() throws OsKeylockerExceptionException {
         if (platformStorage == null) {
-            throw new SecureStorageException("Secure storage not initialized");
+            throw new OsKeylockerExceptionException("Secure storage not initialized");
         }
 
-        if (platformStorage instanceof WindowsSecureStorage) {
+        if (platformStorage instanceof WindowsKeylocker) {
             // Update encryption key if needed
             if (!encryptionKey.equals(DEFAULT_ENCRYPTION_KEY)) {
-                ((WindowsSecureStorage) platformStorage).setEncryptionKey(encryptionKey);
+                ((WindowsKeylocker) platformStorage).setEncryptionKey(encryptionKey);
             }
 
             try {
-                JSONObject data = ((WindowsSecureStorage) platformStorage).retrieveJsonCredential(storageKey);
+                JSONObject data = ((WindowsKeylocker) platformStorage).retrieveJsonCredential(storageKey);
                 if (data == null) {
                     return null;
                 }
@@ -145,27 +144,27 @@ public class OsSecureStore {
                 if (e.getMessage().contains("not found")) {
                     return null;
                 }
-                throw new SecureStorageException("Failed to retrieve properties", e);
+                throw new OsKeylockerExceptionException("Failed to retrieve properties", e);
             }
         } else {
-            throw new SecureStorageException("Platform not supported");
+            throw new OsKeylockerExceptionException("Platform not supported");
         }
     }
 
     /**
      * Removes stored properties
      * @return This instance for chaining
-     * @throws SecureStorageException if removal fails
+     * @throws OsKeylockerExceptionException if removal fails
      */
-    public OsSecureStore remove() throws SecureStorageException {
+    public OsKeyLockerStore remove() throws OsKeylockerExceptionException {
         if (platformStorage == null) {
-            throw new SecureStorageException("Secure storage not initialized");
+            throw new OsKeylockerExceptionException("Secure storage not initialized");
         }
 
-        if (platformStorage instanceof WindowsSecureStorage) {
-            ((WindowsSecureStorage) platformStorage).removeCredential(storageKey);
+        if (platformStorage instanceof WindowsKeylocker) {
+            ((WindowsKeylocker) platformStorage).removeCredential(storageKey);
         } else {
-            throw new SecureStorageException("Platform not supported");
+            throw new OsKeylockerExceptionException("Platform not supported");
         }
 
         return this;
@@ -174,17 +173,17 @@ public class OsSecureStore {
     /**
      * Checks if properties exist for the current storage key
      * @return true if properties exist, false otherwise
-     * @throws SecureStorageException if the check fails
+     * @throws OsKeylockerExceptionException if the check fails
      */
-    public boolean exists() throws SecureStorageException {
+    public boolean exists() throws OsKeylockerExceptionException {
         if (platformStorage == null) {
-            throw new SecureStorageException("Secure storage not initialized");
+            throw new OsKeylockerExceptionException("Secure storage not initialized");
         }
 
-        if (platformStorage instanceof WindowsSecureStorage) {
-            return ((WindowsSecureStorage) platformStorage).credentialExists(storageKey);
+        if (platformStorage instanceof WindowsKeylocker) {
+            return ((WindowsKeylocker) platformStorage).credentialExists(storageKey);
         } else {
-            throw new SecureStorageException("Platform not supported");
+            throw new OsKeylockerExceptionException("Platform not supported");
         }
     }
 }

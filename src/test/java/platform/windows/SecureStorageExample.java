@@ -1,8 +1,8 @@
 package platform.windows;
 
-import com.OsSecureStore.exceptions.SecureStorageException;
-import com.OsSecureStore.platform.SecureStore;
-import com.OsSecureStore.util.EncryptionUtil;
+import com.OsKeylocker.exceptions.OsKeylockerExceptionException;
+import com.OsKeylocker.platform.Keylocker;
+import com.OsKeylocker.util.EncryptionUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +12,7 @@ import java.util.Map;
  */
 public class SecureStorageExample {
 
-    public static void main(String[] args) throws SecureStorageException {
+    public static void main(String[] args) throws OsKeylockerExceptionException {
 
             // Generate a random encryption key (or use a fixed one in production)
             String encryptionKey = EncryptionUtil.generateEncryptionKey();
@@ -28,11 +28,11 @@ public class SecureStorageExample {
             retrieveAndUseCredentials(encryptionKey);
 
             // Example 4: Delete credentials when no longer needed
-            deleteCredentials();
+            //deleteCredentials();
 
     }
 
-    private static void storeOAuthCredentials(String encryptionKey) throws SecureStorageException {
+    private static void storeOAuthCredentials(String encryptionKey) throws OsKeylockerExceptionException {
         System.out.println("\n=== Storing OAuth Credentials ===");
 
         // Create OAuth credentials
@@ -49,7 +49,7 @@ public class SecureStorageExample {
 //        }
 
         // Store the credentials
-        boolean success = SecureStore.write()
+        boolean success = Keylocker.write()
                 .withEncryption(encryptionKey)
                 .to("google-oauth")
                 .properties(oauth)
@@ -58,11 +58,11 @@ public class SecureStorageExample {
         System.out.println("OAuth credentials stored successfully: " + success);
     }
 
-    private static void storeApiKey(String encryptionKey) throws SecureStorageException {
+    private static void storeApiKey(String encryptionKey) throws OsKeylockerExceptionException {
         System.out.println("\n=== Storing API Keys ===");
 
         // Store individual API keys
-        boolean success = SecureStore.write()
+        boolean success = Keylocker.write()
                 .withEncryption(encryptionKey)
                 .to("github-api")
                 .property("key", "ghp_1234567890abcdefghijklmnopqrstuvwxyz")
@@ -72,11 +72,11 @@ public class SecureStorageExample {
         System.out.println("API key stored successfully: " + success);
     }
 
-    private static void retrieveAndUseCredentials(String encryptionKey) throws SecureStorageException {
+    private static void retrieveAndUseCredentials(String encryptionKey) throws OsKeylockerExceptionException {
         System.out.println("\n=== Retrieving Credentials ===");
 
         // Check if credentials exist
-        boolean oauthExists = SecureStore.read()
+        boolean oauthExists = Keylocker.read()
                 .withEncryption(encryptionKey)
                 .from("google-oauth")
                 .exists();
@@ -85,7 +85,7 @@ public class SecureStorageExample {
 
         if (oauthExists) {
             // Retrieve all OAuth properties
-            Map<String, Object> credentials = SecureStore.read()
+            Map<String, Object> credentials = Keylocker.read()
                     .withEncryption(encryptionKey)
                     .from("google-oauth")
                     .getAllProperties();
@@ -96,7 +96,7 @@ public class SecureStorageExample {
             }
 
             // Retrieve specific property
-            String accessToken = (String) SecureStore.read()
+            String accessToken = (String) Keylocker.read()
                     .withEncryption(encryptionKey)
                     .from("google-oauth")
                     .getProperty("access_token");
@@ -105,7 +105,7 @@ public class SecureStorageExample {
         }
 
         // Get GitHub API key
-        String apiKey = (String) SecureStore.read()
+        String apiKey = (String) Keylocker.read()
                 .withEncryption(encryptionKey)
                 .from("github-api")
                 .getProperty("key");
@@ -113,18 +113,18 @@ public class SecureStorageExample {
         System.out.println("GitHub API key: " + apiKey);
     }
 
-    private static void deleteCredentials() throws SecureStorageException {
+    private static void deleteCredentials() throws OsKeylockerExceptionException {
         System.out.println("\n=== Deleting Credentials ===");
 
         // Delete OAuth credentials
-        boolean success = SecureStore.delete()
+        boolean success = Keylocker.delete()
                 .identifier("google-oauth")
                 .execute();
 
         System.out.println("OAuth credentials deleted: " + success);
 
         // Delete API key
-        success = SecureStore.delete()
+        success = Keylocker.delete()
                 .identifier("github-api")
                 .execute();
 
