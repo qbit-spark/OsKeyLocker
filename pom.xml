@@ -4,20 +4,20 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.ossecurestore</groupId>
-    <artifactId>ossecurestore</artifactId>
+    <groupId>com.OsKeyLocker</groupId>
+    <artifactId>oskeylocker</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>OsSecureStore</name>
+    <name>OsKeyLocker</name>
     <description>Cross-platform secure storage library using OS-native security features</description>
-    <url>https://github.com/qbit-spark/OsSecureStore</url>
+    <url>https://github.com/qbit-spark/OsKeyLocker</url>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <junit.version>5.9.2</junit.version>
-        <github.repository>qbit-spark/OsSecureStore</github.repository>
+        <github.repository>qbit-spark/OsKeyLocker</github.repository>
     </properties>
 
     <licenses>
