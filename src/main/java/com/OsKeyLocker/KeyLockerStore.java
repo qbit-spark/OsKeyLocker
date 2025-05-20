@@ -16,6 +16,7 @@ import java.util.Map;
  */
 public class KeyLockerStore {
 
+    //Till now, we have not seen the necessary to use hardcoded the encryption key
     private static final String DEFAULT_ENCRYPTION_KEY = "OsSecureStore-DefaultKey-DoNotUse";
     private static String encryptionKey = DEFAULT_ENCRYPTION_KEY;
     private static String storageKey = "default";
